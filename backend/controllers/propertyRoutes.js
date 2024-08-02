@@ -15,10 +15,23 @@ router.post("/property", async (req, res) => {
   }
 });
 
-// Get All Properties
 router.get("/property", async (req, res) => {
+  const { query } = req.query;
   try {
-    const properties = await Property.find();
+    const searchQuery = {
+      $or: [
+        { title: { $regex: query, $options: "i" } },
+        { city: { $regex: query, $options: "i" } },
+        { type: { $regex: query, $options: "i" } },
+      ],
+    };
+
+    const bhkQuery = parseInt(query, 10);
+    if (!isNaN(bhkQuery)) {
+      searchQuery.$or.push({ Bhk: bhkQuery });
+    }
+
+    const properties = await Property.find(searchQuery);
     res.json(properties);
   } catch (error) {
     console.log(error);
@@ -26,14 +39,14 @@ router.get("/property", async (req, res) => {
   }
 });
 
-router.get("/property/:property_id", async (req,res) => {
+router.get("/property/:property_id", async (req, res) => {
   const { property_id } = req.params;
   try {
     let property = await Property.findById(property_id);
     if (!property) {
       return res.status(404).json({ error: "Property not found" });
     }
-    return res.json({success: true, property: property});
+    return res.json({ success: true, property: property });
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -64,7 +77,9 @@ router.put("/property/:property_id", async (req, res) => {
     if (!property) {
       return res.status(404).json({ error: "Property not found" });
     }
-    property = await Property.findByIdAndUpdate(property_id, req.body, { new: true });
+    property = await Property.findByIdAndUpdate(property_id, req.body, {
+      new: true,
+    });
     res.json(property);
   } catch (error) {
     console.log(error);
