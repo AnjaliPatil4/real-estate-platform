@@ -34,7 +34,7 @@ const propertySchema = new mongoose.Schema({
   // Sell or Rent
   purpose: {
     type: String,
-    enum: ["sell", "rent"]
+    enum: ["Sell", "Rent"]
   },
   phone: {
     type: String,
@@ -61,11 +61,11 @@ const propertySchema = new mongoose.Schema({
     required: true,
   },
 
-  verification_details: {
+  verification: {
     type: String,
     enum: ["pending", "verified", "rejected"],
     default: "pending",
-  }
+  },
 });
 
 const Property = mongoose.model("Property", propertySchema);
