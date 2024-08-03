@@ -35,5 +35,22 @@ router.get("/appointments", async(req,res) => {
         return res.status(500).json({ success: false, message: "Internal Server Error" , error: error});
     }
 });
+router.delete("/appointments/:id",async(req,res)=>{
+    const{id}=req.params;
+    try{
+        const appointment =await Appointments.findById(id);
+        if(!appointment){
+            return res.status(404).json({error:"Appoinment Not Found"});
+        };
+
+        await Appointments.findByIdAndDelete(id);
+        return res.status(200).json({success:true , message:"Successfully Deleted"});
+
+    }
+    catch(err){
+        console.log("Error deleting appointment");
+        return res.status(500).json({err: "Internal Server error, not deleted"})
+    }
+});
 
 module.exports = router;

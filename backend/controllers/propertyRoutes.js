@@ -54,6 +54,7 @@ router.get("/property", async (req, res) => {
   const { query } = req.query;
   try {
     const searchQuery = {
+      verification: 'verified',
       $or: [
         { title: { $regex: query, $options: "i" } },
         { city: { $regex: query, $options: "i" } },
@@ -66,8 +67,20 @@ router.get("/property", async (req, res) => {
       searchQuery.$or.push({ Bhk: bhkQuery });
     }
 
-    const properties = await Property.find(searchQuery);
+    const properties = await Property.find(searchQuery, { verification: "accepted" });
     res.json(properties);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+
+// For Admin purpose
+router.get("/property/verification", async (req, res) => {
+  try {
+    const property_verify = await Property.find({ verification: "pending" });
+    res.json(property_verify);
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: "Internal Server Error" });
