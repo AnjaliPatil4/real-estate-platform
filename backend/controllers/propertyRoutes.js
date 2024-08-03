@@ -15,6 +15,7 @@ router.post("/property", async (req, res) => {
   }
 });
 
+
 // Get All Properties
 router.get("/property", async (req, res) => {
   try {
@@ -25,6 +26,7 @@ router.get("/property", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
 
 router.get("/property/:property_id", async (req,res) => {
   const { property_id } = req.params;

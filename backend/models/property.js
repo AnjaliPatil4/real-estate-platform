@@ -7,18 +7,34 @@ const propertySchema = new mongoose.Schema({
   },
   title: { type: String, required: true },
   description: { type: String, required: true },
+
   address: { type: String, required: true },
+
   city: { type: String, required: true },
+
   price: { type: Number, required: true },
+
+  landmark: { type: String },
+
   Bhk: { type: Number },
+  bathrooms: { type: Number },
+  balconies: { type : Number },
+
+  other_rooms: { type: Number },
   area: { type: Number },
   //type:Residential, Commercial
   type: { type: String, required: true },
+
   //status:Available, Sold, Rented
   status: { type: String },
-  //purpose:Buy, Rent,PG/Coliving
+
+  floors: { type: String },
+  availability_status: { type: String, enum: ["Ready to move", "Under construction"]},
+
+  // Sell or Rent
   purpose: {
     type: String,
+    enum: ["sell", "rent"]
   },
   phone: {
     type: String,
@@ -26,8 +42,30 @@ const propertySchema = new mongoose.Schema({
   mail: {
     type: String,
   },
+
   amenities: { type: [String], default: [] },
   created_at: { type: Date, default: Date.now },
+
+  Propreiter_name: {
+    type: String,
+    required: true,
+  },
+
+  Propreiter_email: {
+    type: String,
+    required: true,
+  },
+
+  Propreiter_contact: {
+    type: String,
+    required: true,
+  },
+
+  verification_details: {
+    type: String,
+    enum: ["pending", "verified", "rejected"],
+    default: "pending",
+  }
 });
 
 const Property = mongoose.model("Property", propertySchema);
