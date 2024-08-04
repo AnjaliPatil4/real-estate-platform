@@ -54,7 +54,6 @@ router.get("/property", async (req, res) => {
   const { query } = req.query;
   try {
     const searchQuery = {
-      verification: 'verified',
       $or: [
         { title: { $regex: query, $options: "i" } },
         { city: { $regex: query, $options: "i" } },
@@ -67,7 +66,7 @@ router.get("/property", async (req, res) => {
       searchQuery.$or.push({ Bhk: bhkQuery });
     }
 
-    const properties = await Property.find(searchQuery, { verification: "accepted" });
+    const properties = await Property.find(searchQuery);
     res.json(properties);
   } catch (error) {
     console.log(error);
