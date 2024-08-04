@@ -6,8 +6,12 @@ const Property = require("../models/property");
 // Create Property
 router.post("/property", async (req, res) => {
   try {
+    let purpose = req.body.purpose;
 
-    console.log(req.body);
+    if(purpose == "Rent/Lease"){
+      purpose = "Rent";
+    };
+
     const newProperty = new Property({
       title: req.body.title,
       description: req.body.description,
@@ -16,7 +20,7 @@ router.post("/property", async (req, res) => {
       price: req.body.price,
       area: req.body.area,
       type: req.body.propertyType,
-      purpose: req.body.purpose,
+      purpose: purpose,
       status: req.body.status,
       amenities: req.body.amenities,
       landmark: req.body.landmark,
@@ -50,20 +54,26 @@ router.get("/allproperty", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
 router.get("/property", async (req, res) => {
-  const { query } = req.query;
+  const query = String(req.query.query);
   try {
     const searchQuery = {
-      $or: [
-        { title: { $regex: query, $options: "i" } },
-        { city: { $regex: query, $options: "i" } },
-        { type: { $regex: query, $options: "i" } },
+      $and: [
+        { verification: "verified" }, // Ensure property is verified
+        {
+          $or: [
+            { title: { $regex: query, $options: "i" } },
+            { city: { $regex: query, $options: "i" } },
+            { type: { $regex: query, $options: "i" } },
+          ],
+        },
       ],
     };
 
     const bhkQuery = parseInt(query, 10);
     if (!isNaN(bhkQuery)) {
-      searchQuery.$or.push({ Bhk: bhkQuery });
+      searchQuery.$and.push({ Bhk: bhkQuery });
     }
 
     const properties = await Property.find(searchQuery);
@@ -73,6 +83,7 @@ router.get("/property", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
 
 
 // For Admin purpose
@@ -99,6 +110,45 @@ router.get("/property/:property_id", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
+router.put('/property/:id/accept', async (req, res) => {
+  try {
+    const propertyId = req.params.id;
+    const property = await Property.findById(propertyId);
+
+    if (!property) {
+      return res.status(404).json({ error: 'Property not found' });
+    }
+
+    property.verification = 'verified';
+    await property.save();
+
+    res.json({ success: true, message: 'Property accepted and verified' });
+  } catch (error) {
+    console.error('Error accepting property:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+// Route to reject a property (delete from database)
+router.put('/property/:id/reject', async (req, res) => {
+  try {
+    const propertyId = req.params.id;
+    const property = await Property.findById(propertyId);
+
+    if (!property) {
+      return res.status(404).json({ error: 'Property not found' });
+    }
+
+    await Property.findByIdAndDelete(propertyId);
+
+    res.json({ success: true, message: 'Property rejected and deleted' });
+  } catch (error) {
+    console.error('Error rejecting property:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
 
 // Delete Property
 router.delete("/property/:property_id", async (req, res) => {
