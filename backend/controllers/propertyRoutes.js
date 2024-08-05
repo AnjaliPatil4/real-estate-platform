@@ -83,6 +83,20 @@ router.get("/property", async (req, res) => {
   }
 });
 
+// For user properties
+router.get("/property/:email_id", async(req,res) => {
+  try {
+    const { email_id } = req.params;
+
+    const Property_my = await Property.find({Propreiter_email: email_id});
+    res.json({success: true, data:Property_my});
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 // For Admin purpose
 router.get("/property/verification", async (req, res) => {
   try {
