@@ -55,12 +55,16 @@ router.get("/allproperty", async (req, res) => {
 });
 
 router.get("/property", async (req, res) => {
-  const query = String(req.query.query);
+  const { city, query } = req.query;
+  console.log(req.query);
   try {
     const bhkQuery = parseInt(query, 10);
     const searchQuery = {
       $and: [
         { verification: "verified" },
+        {
+          city: { $regex: city, $options: "i" },
+        },
         {
           $or: [
             { title: { $regex: query, $options: "i" } },
