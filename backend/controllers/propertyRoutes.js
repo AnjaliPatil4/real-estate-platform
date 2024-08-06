@@ -50,6 +50,7 @@ router.get("/allproperty", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
 router.get("/property", async (req, res) => {
   const { query } = req.query;
   try {
@@ -75,7 +76,7 @@ router.get("/property", async (req, res) => {
 });
 
 // Email Verification
-router.get("/property/:email_id", async (req, res) => {
+router.get("/property-user/:email_id", async (req, res) => {
   try {
     const { email_id } = req.params;
     
@@ -102,6 +103,7 @@ router.get("/property/verification", async (req, res) => {
 
 router.get("/property/:property_id", async (req, res) => {
   const { property_id } = req.params;
+
   try {
     let property = await Property.findById(property_id);
     if (!property) {
