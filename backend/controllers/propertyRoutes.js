@@ -6,12 +6,8 @@ const Property = require("../models/property");
 // Create Property
 router.post("/property", async (req, res) => {
   try {
-    let purpose = req.body.purpose;
 
-    if (purpose == "Rent/Lease") {
-      purpose = "Rent";
-    }
-
+    console.log(req.body);
     const newProperty = new Property({
       title: req.body.title,
       description: req.body.description,
@@ -20,7 +16,7 @@ router.post("/property", async (req, res) => {
       price: req.body.price,
       area: req.body.area,
       type: req.body.propertyType,
-      purpose: purpose,
+      purpose: req.body.purpose,
       status: req.body.status,
       amenities: req.body.amenities,
       landmark: req.body.landmark,
@@ -32,9 +28,10 @@ router.post("/property", async (req, res) => {
       availability_status: req.body.availability,
       Propreiter_name: req.body.proprietorName,
       Propreiter_email: req.body.proprietorEmail,
-      Propreiter_contact: req.body.proprietorPhone,
+      Propreiter_contact: req.body.proprietorPhone
     });
-
+    
+    
     await newProperty.save();
     res.status(201).json(newProperty);
   } catch (error) {
@@ -53,28 +50,22 @@ router.get("/allproperty", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
-
 router.get("/property", async (req, res) => {
-  const { city, query } = req.query;
-  console.log(req.query);
+  const { query } = req.query;
   try {
-    const bhkQuery = parseInt(query, 10);
     const searchQuery = {
-      $and: [
-        { verification: "verified" },
-        {
-          city: { $regex: city, $options: "i" },
-        },
-        {
-          $or: [
-            { title: { $regex: query, $options: "i" } },
-            { city: { $regex: query, $options: "i" } },
-            { type: { $regex: query, $options: "i" } },
-            ...(isNaN(bhkQuery) ? [] : [{ Bhk: bhkQuery }]),
-          ],
-        },
+      $or: [
+        { title: { $regex: query, $options: "i" } },
+        { city: { $regex: query, $options: "i" } },
+        { type: { $regex: query, $options: "i" } },
       ],
     };
+
+    const bhkQuery = parseInt(query, 10);
+    if (!isNaN(bhkQuery)) {
+      searchQuery.$or.push({ Bhk: bhkQuery });
+    }
+
     const properties = await Property.find(searchQuery);
     res.json(properties);
   } catch (error) {
@@ -83,19 +74,20 @@ router.get("/property", async (req, res) => {
   }
 });
 
-// // For user properties
-// router.get("/property/:email_id", async(req,res) => {
-//   try {
-//     const { email_id } = req.params;
+// Email Verification
+router.get("/property/:email_id", async (req, res) => {
+  try {
+    const { email_id } = req.params;
+    
+    const Property_my = await Property.find({ Propreiter_email: email_id });
+    res.json({ success: true, data: Property_my });
 
-//     const Property_my = await Property.find({Propreiter_email: email_id});
-//     res.json({success: true, data:Property_my});
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
 
-//   } catch (error) {
-//     console.log(error);
-//     res.status(500).json({ error: "Internal Server Error" });
-//   }
-// });
 
 // For Admin purpose
 router.get("/property/verification", async (req, res) => {
@@ -118,44 +110,6 @@ router.get("/property/:property_id", async (req, res) => {
     return res.json({ success: true, property: property });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-});
-
-router.put("/property/:id/accept", async (req, res) => {
-  try {
-    const propertyId = req.params.id;
-    const property = await Property.findById(propertyId);
-
-    if (!property) {
-      return res.status(404).json({ error: "Property not found" });
-    }
-
-    property.verification = "verified";
-    await property.save();
-
-    res.json({ success: true, message: "Property accepted and verified" });
-  } catch (error) {
-    console.error("Error accepting property:", error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-});
-
-// Route to reject a property (delete from database)
-router.put("/property/:id/reject", async (req, res) => {
-  try {
-    const propertyId = req.params.id;
-    const property = await Property.findById(propertyId);
-
-    if (!property) {
-      return res.status(404).json({ error: "Property not found" });
-    }
-
-    await Property.findByIdAndDelete(propertyId);
-
-    res.json({ success: true, message: "Property rejected and deleted" });
-  } catch (error) {
-    console.error("Error rejecting property:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
