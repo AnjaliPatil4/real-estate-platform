@@ -80,7 +80,10 @@ router.get("/propertyPurpose", async (req, res) => {
   const { query } = req.query;
   try {
     const searchQuery = {
-      purpose: { $regex: query, $options: "i" },
+      $or: [
+        { purpose: { $regex: query, $options: "i" } },
+        { type: { $regex: query, $options: "i" } },
+      ],
     };
 
     const properties = await Property.find(searchQuery);
@@ -90,6 +93,7 @@ router.get("/propertyPurpose", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
 // Email Verification
 router.get("/property-user/:email_id", async (req, res) => {
   try {
