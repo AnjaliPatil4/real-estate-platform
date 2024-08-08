@@ -6,7 +6,6 @@ const Property = require("../models/property");
 // Create Property
 router.post("/property", async (req, res) => {
   try {
-
     console.log(req.body);
     const newProperty = new Property({
       title: req.body.title,
@@ -28,10 +27,9 @@ router.post("/property", async (req, res) => {
       availability_status: req.body.availability,
       Propreiter_name: req.body.proprietorName,
       Propreiter_email: req.body.proprietorEmail,
-      Propreiter_contact: req.body.proprietorPhone
+      Propreiter_contact: req.body.proprietorPhone,
     });
-    
-    
+
     await newProperty.save();
     res.status(201).json(newProperty);
   } catch (error) {
@@ -52,21 +50,25 @@ router.get("/allproperty", async (req, res) => {
 });
 
 router.get("/property", async (req, res) => {
-  const { query } = req.query;
+  const { city, query } = req.query;
   try {
+    const bhkQuery = parseInt(query, 10);
     const searchQuery = {
-      $or: [
-        { title: { $regex: query, $options: "i" } },
-        { city: { $regex: query, $options: "i" } },
-        { type: { $regex: query, $options: "i" } },
+      $and: [
+        { verification: "verified" },
+        {
+          city: { $regex: city, $options: "i" },
+        },
+        {
+          $or: [
+            { title: { $regex: query, $options: "i" } },
+            { city: { $regex: query, $options: "i" } },
+            { type: { $regex: query, $options: "i" } },
+            ...(isNaN(bhkQuery) ? [] : [{ Bhk: bhkQuery }]),
+          ],
+        },
       ],
     };
-
-    const bhkQuery = parseInt(query, 10);
-    if (!isNaN(bhkQuery)) {
-      searchQuery.$or.push({ Bhk: bhkQuery });
-    }
-
     const properties = await Property.find(searchQuery);
     res.json(properties);
   } catch (error) {
@@ -79,16 +81,14 @@ router.get("/property", async (req, res) => {
 router.get("/property-user/:email_id", async (req, res) => {
   try {
     const { email_id } = req.params;
-    
+
     const Property_my = await Property.find({ Propreiter_email: email_id });
     res.json({ success: true, data: Property_my });
-
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
-
 
 // For Admin purpose
 router.get("/property/verification", async (req, res) => {
