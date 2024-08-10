@@ -76,6 +76,7 @@ router.get("/property", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
 router.get("/propertyPurpose", async (req, res) => {
   const { query } = req.query;
   try {
@@ -108,7 +109,7 @@ router.get("/property-user/:email_id", async (req, res) => {
 });
 
 // For Admin purpose
-router.get("/property/verification", async (req, res) => {
+router.get("/property-verification", async (req, res) => {
   try {
     const property_verify = await Property.find({ verification: "pending" });
     res.json(property_verify);
@@ -151,6 +152,7 @@ router.delete("/property/:property_id", async (req, res) => {
 
 // Update Property
 router.put("/property/:property_id", async (req, res) => {
+  console.log(property_id);
   const { property_id } = req.params;
   try {
     let property = await Property.findById(property_id);
@@ -164,6 +166,44 @@ router.put("/property/:property_id", async (req, res) => {
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.put('/property/:id/accept', async (req, res) => {
+  try {
+    const propertyId = req.params.id;
+    const property = await Property.findById(propertyId);
+
+    if (!property) {
+      return res.status(404).json({ error: 'Property not found' });
+    }
+
+    property.verification = 'verified';
+    await property.save();
+
+    res.json({ success: true, message: 'Property accepted and verified' });
+  } catch (error) {
+    console.error('Error accepting property:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+// Route to reject a property (delete from database)
+router.put('/property/:id/reject', async (req, res) => {
+  try {
+    const propertyId = req.params.id;
+    const property = await Property.findById(propertyId);
+
+    if (!property) {
+      return res.status(404).json({ error: 'Property not found' });
+    }
+
+    await Property.findByIdAndDelete(propertyId);
+
+    res.json({ success: true, message: 'Property rejected and deleted' });
+  } catch (error) {
+    console.error('Error rejecting property:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
