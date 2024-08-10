@@ -109,7 +109,7 @@ router.get("/property-user/:email_id", async (req, res) => {
 });
 
 // For Admin purpose
-router.get("/property-verification", async (req, res) => {
+router.get("/property/verification", async (req, res) => {
   try {
     const property_verify = await Property.find({ verification: "pending" });
     res.json(property_verify);
