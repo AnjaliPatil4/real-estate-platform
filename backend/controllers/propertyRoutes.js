@@ -57,13 +57,13 @@ router.get("/property", async (req, res) => {
       $and: [
         { verification: "verified" },
         {
-          city: { $regex: city, $options: "i" },
+          city: { $regex: typeof city === 'string' ? city : '', $options: "i" }, // Ensure `city` is a string
         },
         {
           $or: [
-            { title: { $regex: query, $options: "i" } },
-            { city: { $regex: query, $options: "i" } },
-            { type: { $regex: query, $options: "i" } },
+            { title: { $regex: typeof query === 'string' ? query : '', $options: "i" } }, // Ensure `query` is a string
+            { city: { $regex: typeof query === 'string' ? query : '', $options: "i" } }, // Ensure `query` is a string
+            { type: { $regex: typeof query === 'string' ? query : '', $options: "i" } }, // Ensure `query` is a string
             ...(isNaN(bhkQuery) ? [] : [{ Bhk: bhkQuery }]),
           ],
         },
@@ -82,8 +82,8 @@ router.get("/propertyPurpose", async (req, res) => {
   try {
     const searchQuery = {
       $or: [
-        { purpose: { $regex: query, $options: "i" } },
-        { type: { $regex: query, $options: "i" } },
+        { purpose: { $regex: typeof query === 'string' ? query : '', $options: "i" } }, // Ensure `query` is a string
+        { type: { $regex: typeof query === 'string' ? query : '', $options: "i" } }, // Ensure `query` is a string
       ],
     };
 
@@ -100,13 +100,27 @@ router.get("/property-user/:email_id", async (req, res) => {
   try {
     const { email_id } = req.params;
 
-    const Property_my = await Property.find({ Propreiter_email: email_id });
-    res.json({ success: true, data: Property_my });
+    const properties = await Property.find({ Propreiter_email: email_id });
+
+    const totalHosted = properties.length;
+    const totalSoldOrRented = properties.filter(p => p.status === "Sold" || p.status === "Rented").length;
+    const availableProperties = properties.filter(p => p.status === "Available").length;
+
+    res.json({
+      success: true,
+      data: properties,
+      stats: {
+        totalHosted,
+        totalSoldOrRented,
+        availableProperties
+      }
+    });
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
 
 // For Admin purpose
 router.get("/property/verification", async (req, res) => {
@@ -152,7 +166,6 @@ router.delete("/property/:property_id", async (req, res) => {
 
 // Update Property
 router.put("/property/:property_id", async (req, res) => {
-  console.log(property_id);
   const { property_id } = req.params;
   try {
     let property = await Property.findById(property_id);
@@ -206,5 +219,28 @@ router.put('/property/:id/reject', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
+router.patch("/property/:id/sold", async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log(id);
+
+    const property = await Property.findByIdAndUpdate(
+      id,
+      { status: "Sold" }
+    );
+
+    if (!property) {
+      return res.status(404).json({ error: "Property not found" });
+    }
+
+    res.json({ success: true, data: property });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+module.exports = router;
 
 module.exports = router;
