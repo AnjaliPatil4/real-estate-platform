@@ -10,11 +10,14 @@ const upload = multer({ storage });
 // Create Property Image
 router.post("/property-image", upload.single("image_url"), async (req, res) => {
   try {
+    console.log("came here");
     const { property_id } = req.body;
     const image_url = req.file.buffer; // Handle the image buffer
 
     const newPropertyImage = new PropertyImage({ property_id, image_url });
     await newPropertyImage.save();
+
+    console.log("Successfull");
     res.status(201).json(newPropertyImage);
   } catch (error) {
     console.log(error);
