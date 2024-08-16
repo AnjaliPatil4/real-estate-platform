@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const propertySchema = new mongoose.Schema({
   user_id: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User"
+    ref: "User",
   },
   title: { type: String, required: true },
   description: { type: String, required: true },
@@ -18,7 +18,7 @@ const propertySchema = new mongoose.Schema({
 
   Bhk: { type: Number },
   bathrooms: { type: Number },
-  balconies: { type : Number },
+  balconies: { type: Number },
 
   other_rooms: { type: Number },
   area: { type: Number },
@@ -29,12 +29,15 @@ const propertySchema = new mongoose.Schema({
   status: { type: String },
 
   floors: { type: String },
-  availability_status: { type: String, enum: ["Ready to move", "Under construction"]},
-
+  availability_status: {
+    type: String,
+    enum: ["Ready to move", "Under construction"],
+  },
+  images: [{ type: String }],
   // Sell or Rent
   purpose: {
     type: String,
-    enum: ["Sell", "Rent"]
+    enum: ["Sell", "Rent"],
   },
   phone: {
     type: String,
@@ -42,7 +45,9 @@ const propertySchema = new mongoose.Schema({
   mail: {
     type: String,
   },
-
+  posted_by: {
+    type: String,
+  },
   amenities: { type: [String], default: [] },
   created_at: { type: Date, default: Date.now },
 

@@ -2,41 +2,63 @@ const express = require("express");
 const router = express.Router();
 
 const Property = require("../models/property");
+const { uploadOnCloudinary } = require("../util/cloudinary.js");
+const { upload } = require("../middleware/multer.middleware.js");
 
 // Create Property
-router.post("/property", async (req, res) => {
-  try {
-    console.log(req.body);
-    const newProperty = new Property({
-      title: req.body.title,
-      description: req.body.description,
-      address: req.body.address,
-      city: req.body.city,
-      price: req.body.price,
-      area: req.body.area,
-      type: req.body.propertyType,
-      purpose: req.body.purpose,
-      status: req.body.status,
-      amenities: req.body.amenities,
-      landmark: req.body.landmark,
-      Bhk: req.body.numberOfBedrooms,
-      bathrooms: req.body.numberOfBathrooms,
-      balconies: req.body.numberOfBalconies,
-      area: req.body.areaDetails,
-      floors: req.body.totalFloorDetails,
-      availability_status: req.body.availability,
-      Propreiter_name: req.body.proprietorName,
-      Propreiter_email: req.body.proprietorEmail,
-      Propreiter_contact: req.body.proprietorPhone,
-    });
+router.post(
+  "/property",
+  upload.fields([{ name: "propertyImage", maxCount: 8 }]),
+  async (req, res) => {
+    try {
+      console.log(req.body);
+      let image_urls = [];
 
-    await newProperty.save();
-    res.status(201).json(newProperty);
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ error: "Internal Server Error" });
+      if (req.files && Array.isArray(req.files.propertyImage)) {
+        for (let i = 0; i < req.files.propertyImage.length; i++) {
+          const propertyImageLocalPath = req.files.propertyImage[i].path;
+          const uploadResult = await uploadOnCloudinary(propertyImageLocalPath);
+          if (uploadResult) {
+            image_urls.push(uploadResult.url);
+          } else {
+            return res.status(500).json({ error: "Failed to upload image" });
+          }
+        }
+      }
+
+      const newProperty = new Property({
+        title: req.body.title,
+        description: req.body.description,
+        address: req.body.address,
+        city: req.body.city,
+        price: req.body.price,
+        area: req.body.area,
+        type: req.body.propertyType,
+        purpose: req.body.purpose,
+        status: req.body.status,
+        amenities: req.body.amenities,
+        landmark: req.body.landmark,
+        Bhk: req.body.numberOfBedrooms,
+        bathrooms: req.body.numberOfBathrooms,
+        balconies: req.body.numberOfBalconies,
+        area: req.body.areaDetails,
+        floors: req.body.totalFloorDetails,
+        posted_by: req.body.postedBy,
+        availability_status: req.body.availability,
+        Propreiter_name: req.body.proprietorName,
+        Propreiter_email: req.body.proprietorEmail,
+        Propreiter_contact: req.body.proprietorPhone,
+        images: image_urls,
+      });
+
+      await newProperty.save();
+      res.status(201).json(newProperty);
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
   }
-});
+);
 
 // Get All Properties
 router.get("/allproperty", async (req, res) => {
@@ -57,13 +79,28 @@ router.get("/property", async (req, res) => {
       $and: [
         { verification: "verified" },
         {
-          city: { $regex: typeof city === 'string' ? city : '', $options: "i" }, // Ensure `city` is a string
+          city: { $regex: typeof city === "string" ? city : "", $options: "i" }, // Ensure `city` is a string
         },
         {
           $or: [
-            { title: { $regex: typeof query === 'string' ? query : '', $options: "i" } }, // Ensure `query` is a string
-            { city: { $regex: typeof query === 'string' ? query : '', $options: "i" } }, // Ensure `query` is a string
-            { type: { $regex: typeof query === 'string' ? query : '', $options: "i" } }, // Ensure `query` is a string
+            {
+              title: {
+                $regex: typeof query === "string" ? query : "",
+                $options: "i",
+              },
+            }, // Ensure `query` is a string
+            {
+              city: {
+                $regex: typeof query === "string" ? query : "",
+                $options: "i",
+              },
+            }, // Ensure `query` is a string
+            {
+              type: {
+                $regex: typeof query === "string" ? query : "",
+                $options: "i",
+              },
+            }, // Ensure `query` is a string
             ...(isNaN(bhkQuery) ? [] : [{ Bhk: bhkQuery }]),
           ],
         },
@@ -82,8 +119,18 @@ router.get("/propertyPurpose", async (req, res) => {
   try {
     const searchQuery = {
       $or: [
-        { purpose: { $regex: typeof query === 'string' ? query : '', $options: "i" } }, // Ensure `query` is a string
-        { type: { $regex: typeof query === 'string' ? query : '', $options: "i" } }, // Ensure `query` is a string
+        {
+          purpose: {
+            $regex: typeof query === "string" ? query : "",
+            $options: "i",
+          },
+        }, // Ensure `query` is a string
+        {
+          type: {
+            $regex: typeof query === "string" ? query : "",
+            $options: "i",
+          },
+        }, // Ensure `query` is a string
       ],
     };
 
@@ -103,8 +150,12 @@ router.get("/property-user/:email_id", async (req, res) => {
     const properties = await Property.find({ Propreiter_email: email_id });
 
     const totalHosted = properties.length;
-    const totalSoldOrRented = properties.filter(p => p.status === "Sold" || p.status === "Rented").length;
-    const availableProperties = properties.filter(p => p.status === "Available").length;
+    const totalSoldOrRented = properties.filter(
+      (p) => p.status === "Sold" || p.status === "Rented"
+    ).length;
+    const availableProperties = properties.filter(
+      (p) => p.status === "Available"
+    ).length;
 
     res.json({
       success: true,
@@ -112,15 +163,14 @@ router.get("/property-user/:email_id", async (req, res) => {
       stats: {
         totalHosted,
         totalSoldOrRented,
-        availableProperties
-      }
+        availableProperties,
+      },
     });
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
-
 
 // For Admin purpose
 router.get("/property/verification", async (req, res) => {
@@ -182,41 +232,41 @@ router.put("/property/:property_id", async (req, res) => {
   }
 });
 
-router.put('/property/:id/accept', async (req, res) => {
+router.put("/property/:id/accept", async (req, res) => {
   try {
     const propertyId = req.params.id;
     const property = await Property.findById(propertyId);
 
     if (!property) {
-      return res.status(404).json({ error: 'Property not found' });
+      return res.status(404).json({ error: "Property not found" });
     }
 
-    property.verification = 'verified';
+    property.verification = "verified";
     await property.save();
 
-    res.json({ success: true, message: 'Property accepted and verified' });
+    res.json({ success: true, message: "Property accepted and verified" });
   } catch (error) {
-    console.error('Error accepting property:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    console.error("Error accepting property:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
 // Route to reject a property (delete from database)
-router.put('/property/:id/reject', async (req, res) => {
+router.put("/property/:id/reject", async (req, res) => {
   try {
     const propertyId = req.params.id;
     const property = await Property.findById(propertyId);
 
     if (!property) {
-      return res.status(404).json({ error: 'Property not found' });
+      return res.status(404).json({ error: "Property not found" });
     }
 
     await Property.findByIdAndDelete(propertyId);
 
-    res.json({ success: true, message: 'Property rejected and deleted' });
+    res.json({ success: true, message: "Property rejected and deleted" });
   } catch (error) {
-    console.error('Error rejecting property:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    console.error("Error rejecting property:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
@@ -225,10 +275,7 @@ router.patch("/property/:id/sold", async (req, res) => {
     const { id } = req.params;
     console.log(id);
 
-    const property = await Property.findByIdAndUpdate(
-      id,
-      { status: "Sold" }
-    );
+    const property = await Property.findByIdAndUpdate(id, { status: "Sold" });
 
     if (!property) {
       return res.status(404).json({ error: "Property not found" });
